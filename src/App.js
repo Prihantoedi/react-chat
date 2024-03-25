@@ -1,22 +1,39 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from './components/Home';
+import './App.css';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import Home from './components/Home';
+import Home from './pages/home';
 import ChatPage from './components/ChatPage';
-import socketIO from 'socket.io-client';
+import io from 'socket.io-client';
 
-const socket = socketIO.connect('http://localhost:4000');
+const socket = io.connect('http://localhost:4000');
 
 function App() {
   
+  const [username, setUsername] = useState('');
+  const [room, setRoom] = useState('');
+
   return (
     
-    <BrowserRouter>
-      <div>
+    <Router>
+      <div className='App'>
         <Routes>
-          <Route exact path="/" element={<Home socket={socket} />}></Route>  
-          <Route exact path="/chat" element={<ChatPage socket={socket} />}></Route>
+          <Route exact path="/" 
+            element={
+            <Home
+              username={username}
+              setUsername={setUsername}
+              room={room}
+              setRoom={setRoom}
+              socket={socket}
+             />
+             }
+            >
+          </Route>  
+        
         </Routes>  
       </div>  
-    </BrowserRouter> 
+    </Router> 
     
   );
 }
