@@ -3,28 +3,59 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const Messages = ({socket}) => {
     const [messagesReceived, setMessagesReceived] = useState([]);
-    const [sampleText, setSampleText] = useState('');
+    const [messageTxt, setMessageTxt] = useState('');
     const messagesColumnRef = useRef(null);
 
-    const messageSocket = () => {
+
+
+    useEffect( () => {
+        
         socket.on('receive_messages', (data) => {
-            setSampleText(`${data}receive_messages`);
-     
+            console.log(data);
+            if(typeof data == 'string'){ // prevent to receive the message data from object
+                setMessageTxt(data);
+            }
+            
+            // let tmp = {
+            //     message: data.message,
+            //     username: data.username,
+            //     __createdtime__ : formatDateFromTimestamp(data.__createdtime__),
+            //     __timestamp__: data.__createdtime__
+            // };
+            
+            // let dataWrapper = [tmp];
+
+            // setMessagesReceived( (messagesReceived) => messagesReceived.concat([...dataWrapper]));
         });
 
         // remove event listener on component unmount
 
         return () => socket.off('receive_message');
 
-    }
-
-
-    // useEffect( () => {
-        
-    //     messageSocket();
-
       
-    // }, [socket]);
+    }, [socket]);
+
+    useEffect( () => {
+        console.log(messageTxt);
+        if(messageTxt !== ''){
+            
+            let newMessage = JSON.parse(messageTxt);
+
+            setMessagesReceived( (state) => [
+                ...state, {
+                    message: newMessage.message,
+                    username: newMessage.username,
+                    __createdtime__: formatDateFromTimestamp(newMessage.__createdtime__),
+                    __timestamp__: newMessage.__createdtime__
+                }
+            ]);
+        }
+
+        setMessageTxt('');
+    
+    }, [messageTxt]);
+
+
 
     useEffect( () => {
 
@@ -41,9 +72,6 @@ const Messages = ({socket}) => {
                 tmpLast100Msg.push(tmp);
             }
 
-            // let newLast100Msg = tmpLast100Msg.sort(
-            //     (a, b) => parseInt(a.__createdtime__) - parseInt(b.__createdtime__)
-            // );
 
             let newLast100Msg = sortMessagesByDate(tmpLast100Msg);
             
@@ -54,25 +82,12 @@ const Messages = ({socket}) => {
         return () => socket.off('last_100_messages')
     }, [socket]);
 
+
     useEffect( () => {
-        if(sampleText != ''){
-            
-            const textToJson = JSON.parse(sampleText);
-            setMessagesReceived( (state) => [
-                ...state, 
-                {
-                    message: textToJson.message, 
-                    username: textToJson.username,
-                    __createdtime__: formatDateFromTimestamp(textToJson.__createdtime__),
-                    __timestamp__: textToJson.__createdtime__,
-                },
-            ]);            
-        }
+        messagesColumnRef.current.scrollTop = messagesColumnRef.current.scrollHeight;
+    }, [messagesReceived]);
 
-    }, [sampleText]);
-
-
-
+    
 
 
     function sortMessagesByDate(messages){
@@ -87,10 +102,10 @@ const Messages = ({socket}) => {
         return date.toLocaleString();
     }
 
-    
+
 
     return (
-        <div className={styles.messageColumn}>
+        <div className={styles.messageColumn} ref={messagesColumnRef}>
             {
                 messagesReceived.map((msg, i) => {
                     return(
